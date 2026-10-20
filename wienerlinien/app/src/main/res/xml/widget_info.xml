@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="180dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="3"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_departure"
+    android:configure="com.wienerlinien.app.widget.WidgetConfigureActivity"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_label"
+    android:previewLayout="@layout/widget_departure">
+    <!--
+        updatePeriodMillis = 30 minutes (Android minimum is 30 minutes for battery reasons).
+        For 30-second updates inside the widget, the app broadcasts manually via WorkManager.
+        The broadcast ACTION_REFRESH on the widget forces immediate refresh.
+    -->
+</appwidget-provider>

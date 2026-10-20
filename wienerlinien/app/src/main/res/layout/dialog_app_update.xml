@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/bg_widget">
+
+    <!-- Header Icon -->
+    <ImageView
+        android:id="@+id/updateIcon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center_horizontal"
+        android:src="@drawable/ic_system_update"
+        app:tint="@color/accent"
+        android:layout_marginBottom="12dp"
+        android:contentDescription="@null" />
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/updateTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="New Update Available"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:layout_marginBottom="4dp" />
+
+    <!-- Version Subtitle -->
+    <TextView
+        android:id="@+id/updateVersionText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Version 1.1 is ready to install"
+        android:textSize="13sp"
+        android:textColor="@color/text_secondary"
+        android:fontFamily="sans-serif"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Changelog Container -->
+    <LinearLayout
+        android:id="@+id/changelogContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_line_chip"
+        android:backgroundTint="@color/surface"
+        android:padding="14dp"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="WHAT'S NEW"
+            android:textSize="11sp"
+            android:textColor="@color/text_tertiary"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.05"
+            android:layout_marginBottom="6dp" />
+
+        <TextView
+            android:id="@+id/updateChangelog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Bug fixes and improvements"
+            android:textSize="13sp"
+            android:textColor="@color/text_primary"
+            android:fontFamily="sans-serif"
+            android:lineSpacingMultiplier="1.25" />
+
+    </LinearLayout>
+
+    <!-- Download Progress Bar (initially gone) -->
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/updateProgressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="false"
+        app:indicatorColor="@color/accent"
+        app:trackColor="@color/surface"
+        app:trackCornerRadius="4dp"
+        android:max="100"
+        android:progress="0"
+        android:visibility="gone"
+        android:layout_marginBottom="6dp" />
+
+    <TextView
+        android:id="@+id/updateStatusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Downloading update…"
+        android:textSize="12sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:visibility="gone"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="8dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/updateLaterBtn"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Later"
+            android:textColor="@color/text_secondary"
+            android:layout_marginEnd="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/updateNowBtn"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Update Now"
+            app:backgroundTint="@color/accent"
+            android:textColor="@color/white"
+            app:cornerRadius="16dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

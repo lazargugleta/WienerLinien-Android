@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetContainer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_widget"
+    android:padding="16dp">
+
+    <!-- Widget header row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="10dp">
+
+        <!-- Title / stop name -->
+        <TextView
+            android:id="@+id/widgetTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <!-- Refresh area / button with enlarged touch target -->
+        <LinearLayout
+            android:id="@+id/widgetRefreshArea"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="2dp">
+
+            <!-- Last updated time -->
+            <TextView
+                android:id="@+id/widgetUpdatedTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:textColor="#99FFFFFF"
+                android:fontFamily="sans-serif"
+                android:layout_marginEnd="6dp" />
+
+            <!-- Refresh button -->
+            <ImageView
+                android:id="@+id/widgetRefreshBtn"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_refresh"
+                android:padding="3dp"
+                android:contentDescription="Refresh" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Thin separator (using ImageView as View is not supported in RemoteViews) -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#33FFFFFF"
+        android:layout_marginBottom="8dp"
+        android:contentDescription="@null" />
+
+    <!-- Status text (loading / error / no departures) -->
+    <TextView
+        android:id="@+id/widgetStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textColor="#99FFFFFF"
+        android:fontFamily="sans-serif"
+        android:gravity="center"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:visibility="visible" />
+
+    <!-- Departure row 1 -->
+    <LinearLayout
+        android:id="@+id/widgetDep1Row"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/widgetDep1Line"
+            android:layout_width="44dp"
+            android:layout_height="26dp"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_widget_line_chip"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:id="@+id/widgetDep1Direction"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:textSize="13sp"
+            android:textColor="#DDFFFFFF"
+            android:fontFamily="sans-serif"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <ImageView
+            android:id="@+id/widgetDep1Realtime"
+            android:layout_width="6dp"
+            android:layout_height="6dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/bg_realtime_dot_widget"
+            android:visibility="invisible"
+            android:contentDescription="Realtime" />
+
+        <TextView
+            android:id="@+id/widgetDep1Time"
+            android:layout_width="56dp"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="end" />
+
+    </LinearLayout>
+
+    <!-- Departure row 2 -->
+    <LinearLayout
+        android:id="@+id/widgetDep2Row"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/widgetDep2Line"
+            android:layout_width="44dp"
+            android:layout_height="26dp"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_widget_line_chip"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:id="@+id/widgetDep2Direction"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:textSize="13sp"
+            android:textColor="#DDFFFFFF"
+            android:fontFamily="sans-serif"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <ImageView
+            android:id="@+id/widgetDep2Realtime"
+            android:layout_width="6dp"
+            android:layout_height="6dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/bg_realtime_dot_widget"
+            android:visibility="invisible"
+            android:contentDescription="Realtime" />
+
+        <TextView
+            android:id="@+id/widgetDep2Time"
+            android:layout_width="56dp"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="end" />
+
+    </LinearLayout>
+
+    <!-- Departure row 3 -->
+    <LinearLayout
+        android:id="@+id/widgetDep3Row"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/widgetDep3Line"
+            android:layout_width="44dp"
+            android:layout_height="26dp"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_widget_line_chip"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:id="@+id/widgetDep3Direction"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:textSize="13sp"
+            android:textColor="#DDFFFFFF"
+            android:fontFamily="sans-serif"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <ImageView
+            android:id="@+id/widgetDep3Realtime"
+            android:layout_width="6dp"
+            android:layout_height="6dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/bg_realtime_dot_widget"
+            android:visibility="invisible"
+            android:contentDescription="Realtime" />
+
+        <TextView
+            android:id="@+id/widgetDep3Time"
+            android:layout_width="56dp"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="end" />
+
+    </LinearLayout>
+
+    <!-- Departure row 4 -->
+    <LinearLayout
+        android:id="@+id/widgetDep4Row"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+        <TextView android:id="@+id/widgetDep4Line" android:layout_width="44dp" android:layout_height="26dp" android:gravity="center" android:textSize="12sp" android:textStyle="bold" android:textColor="#FFFFFF" android:background="@drawable/bg_widget_line_chip" android:fontFamily="sans-serif-medium" />
+        <TextView android:id="@+id/widgetDep4Direction" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="10dp" android:textSize="13sp" android:textColor="#DDFFFFFF" android:fontFamily="sans-serif" android:maxLines="1" android:ellipsize="end" />
+        <ImageView android:id="@+id/widgetDep4Realtime" android:layout_width="6dp" android:layout_height="6dp" android:layout_marginEnd="8dp" android:src="@drawable/bg_realtime_dot_widget" android:visibility="invisible" android:contentDescription="Realtime" />
+        <TextView android:id="@+id/widgetDep4Time" android:layout_width="56dp" android:layout_height="wrap_content" android:textSize="14sp" android:textStyle="bold" android:textColor="#FFFFFF" android:fontFamily="sans-serif-medium" android:gravity="end" />
+    </LinearLayout>
+
+    <!-- Departure row 5 -->
+    <LinearLayout
+        android:id="@+id/widgetDep5Row"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+        <TextView android:id="@+id/widgetDep5Line" android:layout_width="44dp" android:layout_height="26dp" android:gravity="center" android:textSize="12sp" android:textStyle="bold" android:textColor="#FFFFFF" android:background="@drawable/bg_widget_line_chip" android:fontFamily="sans-serif-medium" />
+        <TextView android:id="@+id/widgetDep5Direction" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="10dp" android:textSize="13sp" android:textColor="#DDFFFFFF" android:fontFamily="sans-serif" android:maxLines="1" android:ellipsize="end" />
+        <ImageView android:id="@+id/widgetDep5Realtime" android:layout_width="6dp" android:layout_height="6dp" android:layout_marginEnd="8dp" android:src="@drawable/bg_realtime_dot_widget" android:visibility="invisible" android:contentDescription="Realtime" />
+        <TextView android:id="@+id/widgetDep5Time" android:layout_width="56dp" android:layout_height="wrap_content" android:textSize="14sp" android:textStyle="bold" android:textColor="#FFFFFF" android:fontFamily="sans-serif-medium" android:gravity="end" />
+    </LinearLayout>
+
+    <!-- Departure row 6 -->
+    <LinearLayout
+        android:id="@+id/widgetDep6Row"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+        <TextView android:id="@+id/widgetDep6Line" android:layout_width="44dp" android:layout_height="26dp" android:gravity="center" android:textSize="12sp" android:textStyle="bold" android:textColor="#FFFFFF" android:background="@drawable/bg_widget_line_chip" android:fontFamily="sans-serif-medium" />
+        <TextView android:id="@+id/widgetDep6Direction" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="10dp" android:textSize="13sp" android:textColor="#DDFFFFFF" android:fontFamily="sans-serif" android:maxLines="1" android:ellipsize="end" />
+        <ImageView android:id="@+id/widgetDep6Realtime" android:layout_width="6dp" android:layout_height="6dp" android:layout_marginEnd="8dp" android:src="@drawable/bg_realtime_dot_widget" android:visibility="invisible" android:contentDescription="Realtime" />
+        <TextView android:id="@+id/widgetDep6Time" android:layout_width="56dp" android:layout_height="wrap_content" android:textSize="14sp" android:textStyle="bold" android:textColor="#FFFFFF" android:fontFamily="sans-serif-medium" android:gravity="end" />
+    </LinearLayout>
+
+    <!-- Departure row 7 -->
+    <LinearLayout
+        android:id="@+id/widgetDep7Row"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+        <TextView android:id="@+id/widgetDep7Line" android:layout_width="44dp" android:layout_height="26dp" android:gravity="center" android:textSize="12sp" android:textStyle="bold" android:textColor="#FFFFFF" android:background="@drawable/bg_widget_line_chip" android:fontFamily="sans-serif-medium" />
+        <TextView android:id="@+id/widgetDep7Direction" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="10dp" android:textSize="13sp" android:textColor="#DDFFFFFF" android:fontFamily="sans-serif" android:maxLines="1" android:ellipsize="end" />
+        <ImageView android:id="@+id/widgetDep7Realtime" android:layout_width="6dp" android:layout_height="6dp" android:layout_marginEnd="8dp" android:src="@drawable/bg_realtime_dot_widget" android:visibility="invisible" android:contentDescription="Realtime" />
+        <TextView android:id="@+id/widgetDep7Time" android:layout_width="56dp" android:layout_height="wrap_content" android:textSize="14sp" android:textStyle="bold" android:textColor="#FFFFFF" android:fontFamily="sans-serif-medium" android:gravity="end" />
+    </LinearLayout>
+
+    <!-- Departure row 8 -->
+    <LinearLayout
+        android:id="@+id/widgetDep8Row"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+        <TextView android:id="@+id/widgetDep8Line" android:layout_width="44dp" android:layout_height="26dp" android:gravity="center" android:textSize="12sp" android:textStyle="bold" android:textColor="#FFFFFF" android:background="@drawable/bg_widget_line_chip" android:fontFamily="sans-serif-medium" />
+        <TextView android:id="@+id/widgetDep8Direction" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="10dp" android:textSize="13sp" android:textColor="#DDFFFFFF" android:fontFamily="sans-serif" android:maxLines="1" android:ellipsize="end" />
+        <ImageView android:id="@+id/widgetDep8Realtime" android:layout_width="6dp" android:layout_height="6dp" android:layout_marginEnd="8dp" android:src="@drawable/bg_realtime_dot_widget" android:visibility="invisible" android:contentDescription="Realtime" />
+        <TextView android:id="@+id/widgetDep8Time" android:layout_width="56dp" android:layout_height="wrap_content" android:textSize="14sp" android:textStyle="bold" android:textColor="#FFFFFF" android:fontFamily="sans-serif-medium" android:gravity="end" />
+    </LinearLayout>
+
+</LinearLayout>

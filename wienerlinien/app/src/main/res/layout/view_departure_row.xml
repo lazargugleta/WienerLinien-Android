@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="52dp">
+
+    <!-- Vehicle type icon -->
+    <ImageView
+        android:id="@+id/vehicleIcon"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="center_vertical"
+        android:layout_marginEnd="6dp"
+        android:contentDescription="Vehicle type"
+        app:tint="@color/text_secondary" />
+
+    <!-- Line chip (colored background) -->
+    <TextView
+        android:id="@+id/lineChip"
+        android:layout_width="48dp"
+        android:layout_height="28dp"
+        android:gravity="center"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="@color/white"
+        android:fontFamily="sans-serif-medium"
+        android:background="@drawable/bg_line_chip"
+        android:layout_gravity="center_vertical"
+        android:includeFontPadding="false" />
+
+    <!-- Destination & schedule details -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="10dp"
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/towardsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:fontFamily="sans-serif-medium"
+            android:ellipsize="end"
+            android:maxLines="1" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="2dp">
+
+            <!-- Formatted clock departure time (HH:mm) -->
+            <TextView
+                android:id="@+id/timeText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:fontFamily="sans-serif" />
+
+            <TextView
+                android:id="@+id/timeDotSeparator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" · "
+                android:textSize="12sp"
+                android:textColor="@color/text_tertiary" />
+
+            <!-- LIVE real-time badge -->
+            <TextView
+                android:id="@+id/liveBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LIVE"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:background="@drawable/bg_live_badge"
+                android:paddingHorizontal="5dp"
+                android:paddingVertical="1dp"
+                android:includeFontPadding="false" />
+
+            <!-- SCHED scheduled badge -->
+            <TextView
+                android:id="@+id/scheduledBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SCHED"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="@color/badge_scheduled_text"
+                android:background="@drawable/bg_scheduled_badge"
+                android:paddingHorizontal="5dp"
+                android:paddingVertical="1dp"
+                android:includeFontPadding="false"
+                android:visibility="gone" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Realtime dot indicator -->
+    <View
+        android:id="@+id/realtimeDot"
+        android:layout_width="7dp"
+        android:layout_height="7dp"
+        android:layout_marginEnd="6dp"
+        android:background="@drawable/bg_realtime_dot"
+        android:layout_gravity="center_vertical"
+        android:visibility="invisible" />
+
+    <!-- Countdown text (e.g. "3 min", "now") -->
+    <TextView
+        android:id="@+id/countdownText"
+        android:layout_width="wrap_content"
+        android:minWidth="60dp"
+        android:layout_height="wrap_content"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="end"
+        android:layout_gravity="center_vertical" />
+
+</merge>

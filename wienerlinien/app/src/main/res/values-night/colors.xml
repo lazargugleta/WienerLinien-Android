@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Background layers (Dark Mode) -->
+    <color name="background">#121212</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="surface_elevated">#2C2C2E</color>
+
+    <!-- Text hierarchy -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#A1A1A6</color>
+    <color name="text_tertiary">#636366</color>
+
+    <!-- Accent: Wiener Linien signature red (DayNight tuned) -->
+    <color name="accent">#FF5449</color>
+    <color name="accent_light">#3B1A1E</color>
+    <color name="wl_red">#FF5449</color>
+
+    <!-- Separator -->
+    <color name="separator">#2C2C2E</color>
+
+    <!-- Basic -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <!-- Status & Alerts -->
+    <color name="realtime_green">#30D158</color>
+    <color name="warning_orange">#FF9F0A</color>
+    <color name="error_red">#FFB4AB</color>
+    <color name="error_container">#93000A</color>
+    <color name="on_error_container">#FFDAD6</color>
+
+    <!-- Line colors (U-Bahn) -->
+    <color name="u1_red">#E2001A</color>
+    <color name="u2_purple">#B35CC2</color>
+    <color name="u3_orange">#FF7722</color>
+    <color name="u4_green">#00B350</color>
+    <color name="u5_turquoise">#00BFA5</color>
+    <color name="u6_brown">#A37C19</color>
+
+    <!-- Transport type colors -->
+    <color name="tram_red">#E2001A</color>
+    <color name="bus_blue">#2196F3</color>
+    <color name="night_bus">#37474F</color>
+    <color name="train_blue">#1976D2</color>
+
+    <!-- Badges -->
+    <color name="badge_scheduled_bg">#2C2C2E</color>
+    <color name="badge_scheduled_text">#A1A1A6</color>
+
+    <!-- Widget background -->
+    <color name="widget_bg">#CC121212</color>
+</resources>

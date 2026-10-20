@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Base app theme: Dark mode -->
+    <style name="Theme.WienerLinien" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorPrimaryVariant">@color/accent</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:statusBarColor">@color/background</item>
+        <item name="android:navigationBarColor">@color/background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:fontFamily">sans-serif</item>
+
+        <item name="cardViewStyle">@style/CardStyle</item>
+        <item name="materialCardViewStyle">@style/CardStyle</item>
+    </style>
+
+    <!-- Dialog theme for widget configure -->
+    <style name="Theme.WienerLinien.Dialog" parent="Theme.WienerLinien">
+        <item name="android:windowIsFloating">false</item>
+    </style>
+
+    <!-- Card style: rounded, dark surface background -->
+    <style name="CardStyle" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardElevation">0dp</item>
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardBackgroundColor">@color/surface</item>
+        <item name="strokeWidth">0dp</item>
+    </style>
+
+    <!-- Toolbar title -->
+    <style name="ToolbarTitle" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <!-- Collapsing toolbar title styles -->
+    <style name="ExpandedTitle" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">34sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="CollapsedTitle" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+</resources>

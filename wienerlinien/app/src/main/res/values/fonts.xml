@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SF Pro fonts are Apple proprietary and cannot be bundled.
+  We declare the font family resources pointing to the closest system fallbacks.
+  On Android, "sans-serif" = Roboto which is visually close.
+  For a real device build, you can replace these with downloaded fonts.
+-->
+<resources>
+    <!-- These font resources reference the system font stack.
+         Replace font files in res/font/ to use custom fonts. -->
+</resources>
