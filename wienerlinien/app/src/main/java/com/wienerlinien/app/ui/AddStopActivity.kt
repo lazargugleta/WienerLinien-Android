@@ -82,6 +82,9 @@ class AddStopActivity : AppCompatActivity() {
                 else -> binding.departureCountGroup.check(R.id.btnCount3)
             }
 
+            binding.chipHomeProfile.isChecked = stop.isHome
+            binding.chipWorkProfile.isChecked = stop.isWork
+
             binding.saveBtn.text = "Save Changes"
         }
     }
@@ -330,6 +333,9 @@ class AddStopActivity : AppCompatActivity() {
                 else -> 3
             }
 
+            val isHome = binding.chipHomeProfile.isChecked
+            val isWork = binding.chipWorkProfile.isChecked
+
             val stop = SavedStop(
                 id = editingStopId ?: 0,
                 rblNumber = rbl,
@@ -339,7 +345,9 @@ class AddStopActivity : AppCompatActivity() {
                 direction = selectedPlatform,
                 platformLines = selectedServedLines,
                 customLabel = customLabel,
-                maxDepartures = maxDeps
+                maxDepartures = maxDeps,
+                isHome = isHome,
+                isWork = isWork
             )
 
             lifecycleScope.launch {

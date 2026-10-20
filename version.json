@@ -1,8 +1,8 @@
 {
-  "versionCode": 2,
-  "versionName": "1.1",
+  "versionCode": 3,
+  "versionName": "1.2",
   "apkUrl": "https://github.com/lazargugleta/WienerLinien-Android/releases/latest/download/app-release.apk",
-  "changelog": "• Commute Profiles: Tag Home & Work stations with quick filter tabs\n• Nearby Stops: Discover nearest platforms & departures via GPS\n• Service Alerts: Live disruption notices directly from Wiener Linien\n• Departure Alarms: Set heads-up reminders ahead of your train\n• Offline Vienna Transit Map viewer\n• Quick Settings Tile for instant next departure glance\n• Widget customization: Opacity glass mode and departure grouping\n• Reorder stations & streamlined top toolbar",
+  "changelog": "• Multiple Home & Work stations supported (e.g. tag both your local bus and tram)\n• Cleaner, symmetrical card design with crisp inline Home & Work badges\n• Simplified station card actions without clutter\n• Map feature removed",
   "releaseDate": "2026-10-20",
   "isMandatory": false
 }

@@ -53,32 +53,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun toggleHomeStop(stop: SavedStop) {
+    fun updateStopCommute(stopId: Int, isHome: Boolean, isWork: Boolean) {
         viewModelScope.launch {
-            val newHomeId = if (stop.isHome) null else stop.id
-            repository.setHomeStop(newHomeId)
+            repository.updateStopCommute(stopId, isHome, isWork)
             broadcastWidgetUpdate()
         }
     }
 
-    fun setHomeStop(stopId: Int?) {
+    fun toggleHomeStop(stop: SavedStop) {
         viewModelScope.launch {
-            repository.setHomeStop(stopId)
+            repository.toggleHomeStop(stop.id)
             broadcastWidgetUpdate()
         }
     }
 
     fun toggleWorkStop(stop: SavedStop) {
         viewModelScope.launch {
-            val newWorkId = if (stop.isWork) null else stop.id
-            repository.setWorkStop(newWorkId)
-            broadcastWidgetUpdate()
-        }
-    }
-
-    fun setWorkStop(stopId: Int?) {
-        viewModelScope.launch {
-            repository.setWorkStop(stopId)
+            repository.toggleWorkStop(stop.id)
             broadcastWidgetUpdate()
         }
     }

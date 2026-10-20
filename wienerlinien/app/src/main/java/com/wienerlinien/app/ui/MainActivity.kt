@@ -354,36 +354,26 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val currentTag = when {
-            stop.isHome -> 0
-            stop.isWork -> 1
-            else -> 2
-        }
+        val checkedItems = booleanArrayOf(stop.isHome, stop.isWork)
         val options = arrayOf(
             "🏠 Home Station",
-            "💼 Work Station",
-            "✕ None (Normal Stop)"
+            "💼 Work Station"
         )
 
         MaterialAlertDialogBuilder(this)
             .setTitle(stop.customLabel?.takeIf { it.isNotBlank() } ?: stop.stopName)
-            .setSingleChoiceItems(options, currentTag) { dialog, which ->
-                when (which) {
-                    0 -> {
-                        viewModel.setHomeStop(stop.id)
-                        Snackbar.make(binding.root, "Set as Home Station 🏠", Snackbar.LENGTH_SHORT).show()
-                    }
-                    1 -> {
-                        viewModel.setWorkStop(stop.id)
-                        Snackbar.make(binding.root, "Set as Work Station 💼", Snackbar.LENGTH_SHORT).show()
-                    }
-                    2 -> {
-                        if (stop.isHome) viewModel.setHomeStop(null)
-                        if (stop.isWork) viewModel.setWorkStop(null)
-                        Snackbar.make(binding.root, "Commute tag cleared", Snackbar.LENGTH_SHORT).show()
-                    }
-                }
-                dialog.dismiss()
+            .setMultiChoiceItems(options, checkedItems) { _, which, isChecked ->
+                checkedItems[which] = isChecked
+            }
+            .setPositiveButton("Save") { _, _ ->
+                val newIsHome = checkedItems[0]
+                val newIsWork = checkedItems[1]
+                viewModel.updateStopCommute(stop.id, newIsHome, newIsWork)
+                val labels = mutableListOf<String>()
+                if (newIsHome) labels.add("Home 🏠")
+                if (newIsWork) labels.add("Work 💼")
+                val msg = if (labels.isNotEmpty()) "Set as ${labels.joinToString(" & ")}" else "Commute tags cleared"
+                Snackbar.make(binding.root, msg, Snackbar.LENGTH_SHORT).show()
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -480,20 +470,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun showOptionsMenu(anchor: View) {
         val popup = PopupMenu(this, anchor)
-        popup.menu.add(0, 1, 0, "Vienna Transit Map")
-        popup.menu.add(0, 2, 1, "Check for updates")
-        popup.menu.add(0, 3, 2, "Update server settings")
+        popup.menu.add(0, 1, 0, "Check for updates")
+        popup.menu.add(0, 2, 1, "Update server settings")
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> {
-                    startActivity(Intent(this, TransitMapActivity::class.java))
-                    true
-                }
-                2 -> {
                     checkAppUpdate(isManual = true)
                     true
                 }
-                3 -> {
+                2 -> {
                     showUpdateSettingsDialog()
                     true
                 }

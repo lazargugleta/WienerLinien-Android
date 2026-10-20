@@ -103,9 +103,9 @@ class DepartureGroupAdapter(
         private val card: CardView = view.findViewById(R.id.card)
         private val stopNameText: TextView = view.findViewById(R.id.stopName)
         private val offlineIndicator: TextView = view.findViewById(R.id.offlineIndicator)
-        private val commuteBadge: TextView = view.findViewById(R.id.commuteBadge)
+        private val homeBadge: TextView = view.findViewById(R.id.homeBadge)
+        private val workBadge: TextView = view.findViewById(R.id.workBadge)
         private val rblText: TextView = view.findViewById(R.id.rblNumber)
-        private val tagBtn: android.widget.ImageView = view.findViewById(R.id.tagBtn)
         private val disruptionBanner: View = view.findViewById(R.id.disruptionBanner)
         private val disruptionText: TextView = view.findViewById(R.id.disruptionText)
         private val dep1: DepartureRowView = view.findViewById(R.id.dep1)
@@ -138,25 +138,11 @@ class DepartureGroupAdapter(
             // Stop label: custom label > stop name
             stopNameText.text = stop.customLabel?.takeIf { it.isNotBlank() } ?: stop.stopName
 
-            // Commute Badge (Home / Work)
-            when {
-                stop.isHome -> {
-                    commuteBadge.visibility = View.VISIBLE
-                    commuteBadge.text = "🏠 Home"
-                    tagBtn.setColorFilter(androidx.core.content.ContextCompat.getColor(itemView.context, R.color.accent))
-                }
-                stop.isWork -> {
-                    commuteBadge.visibility = View.VISIBLE
-                    commuteBadge.text = "💼 Work"
-                    tagBtn.setColorFilter(androidx.core.content.ContextCompat.getColor(itemView.context, R.color.accent))
-                }
-                else -> {
-                    commuteBadge.visibility = View.GONE
-                    tagBtn.setColorFilter(androidx.core.content.ContextCompat.getColor(itemView.context, R.color.text_tertiary))
-                }
-            }
-            commuteBadge.setOnClickListener { onToggleCommuteTag?.invoke(stop) }
-            tagBtn.setOnClickListener { onToggleCommuteTag?.invoke(stop) }
+            // Commute Badges (Home & Work - independent flags, both or multiple can be active)
+            homeBadge.visibility = if (stop.isHome) View.VISIBLE else View.GONE
+            workBadge.visibility = if (stop.isWork) View.VISIBLE else View.GONE
+            homeBadge.setOnClickListener { onToggleCommuteTag?.invoke(stop) }
+            workBadge.setOnClickListener { onToggleCommuteTag?.invoke(stop) }
 
             // Offline cache indicator
             val isOffline = departures.any { it.isCached }

@@ -381,6 +381,41 @@
 
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="COMMUTE PROFILE (optional)"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_tertiary"
+                    android:fontFamily="sans-serif"
+                    android:letterSpacing="0.08"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="8dp"
+                    android:paddingHorizontal="4dp" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/commuteChipGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipHomeProfile"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🏠 Home Station"
+                        android:checkable="true" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipWorkProfile"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💼 Work Station"
+                        android:checkable="true" />
+
+                </com.google.android.material.chip.ChipGroup>
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/saveBtn"
                     android:layout_width="match_parent"

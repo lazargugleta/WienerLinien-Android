@@ -352,20 +352,19 @@ class DepartureRepository(
         }
     }
 
-    suspend fun setHomeStop(stopId: Int?) = withContext(Dispatchers.IO) {
-        val stops = savedStopDao.getAllStopsOnce()
-        val updated = stops.map { stop ->
-            stop.copy(isHome = (stop.id == stopId))
-        }
-        savedStopDao.updateAll(updated)
+    suspend fun updateStopCommute(stopId: Int, isHome: Boolean, isWork: Boolean) = withContext(Dispatchers.IO) {
+        val stop = savedStopDao.getById(stopId) ?: return@withContext
+        savedStopDao.update(stop.copy(isHome = isHome, isWork = isWork))
     }
 
-    suspend fun setWorkStop(stopId: Int?) = withContext(Dispatchers.IO) {
-        val stops = savedStopDao.getAllStopsOnce()
-        val updated = stops.map { stop ->
-            stop.copy(isWork = (stop.id == stopId))
-        }
-        savedStopDao.updateAll(updated)
+    suspend fun toggleHomeStop(stopId: Int) = withContext(Dispatchers.IO) {
+        val stop = savedStopDao.getById(stopId) ?: return@withContext
+        savedStopDao.update(stop.copy(isHome = !stop.isHome))
+    }
+
+    suspend fun toggleWorkStop(stopId: Int) = withContext(Dispatchers.IO) {
+        val stop = savedStopDao.getById(stopId) ?: return@withContext
+        savedStopDao.update(stop.copy(isWork = !stop.isWork))
     }
 
     suspend fun getAllStopsOnce(): List<SavedStop> = savedStopDao.getAllStopsOnce()

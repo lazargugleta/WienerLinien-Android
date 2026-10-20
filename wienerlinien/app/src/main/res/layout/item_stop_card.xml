@@ -16,7 +16,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Card header: stop name + offline badge + delete -->
+        <!-- Card header: stop name + metadata/pills + actions -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -28,29 +28,64 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:layout_marginEnd="8dp">
 
+                <TextView
+                    android:id="@+id/stopName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:fontFamily="sans-serif-medium"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:letterSpacing="-0.01" />
+
+                <!-- Subtitle with Commute Pills and Stop Metadata -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="3dp">
 
                     <TextView
-                        android:id="@+id/stopName"
+                        android:id="@+id/homeBadge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="17sp"
+                        android:text="🏠 Home"
+                        android:textSize="10sp"
                         android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:fontFamily="sans-serif-medium"
-                        android:letterSpacing="-0.01" />
+                        android:textColor="@color/white"
+                        android:background="@drawable/bg_home_pill"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="1.5dp"
+                        android:layout_marginEnd="6dp"
+                        android:singleLine="true"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/workBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💼 Work"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/white"
+                        android:background="@drawable/bg_work_pill"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="1.5dp"
+                        android:layout_marginEnd="6dp"
+                        android:singleLine="true"
+                        android:visibility="gone" />
 
                     <TextView
                         android:id="@+id/offlineIndicator"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="6dp"
                         android:text="Offline"
                         android:textSize="11sp"
                         android:textStyle="bold"
@@ -58,41 +93,18 @@
                         android:visibility="gone" />
 
                     <TextView
-                        android:id="@+id/commuteBadge"
+                        android:id="@+id/rblNumber"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="🏠 Home"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/accent"
-                        android:background="@drawable/bg_line_chip"
-                        android:paddingHorizontal="6dp"
-                        android:paddingVertical="2dp"
-                        android:visibility="gone" />
+                        android:textSize="12sp"
+                        android:textColor="@color/text_tertiary"
+                        android:fontFamily="sans-serif"
+                        android:ellipsize="end"
+                        android:maxLines="1" />
+
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/rblNumber"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="12sp"
-                    android:textColor="@color/text_tertiary"
-                    android:fontFamily="sans-serif"
-                    android:layout_marginTop="2dp" />
-
             </LinearLayout>
-
-            <ImageView
-                android:id="@+id/tagBtn"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:padding="8dp"
-                android:src="@drawable/ic_commute_tag"
-                app:tint="@color/text_tertiary"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:visibility="visible"
-                android:contentDescription="Set Home or Work" />
 
             <ImageView
                 android:id="@+id/dragHandle"

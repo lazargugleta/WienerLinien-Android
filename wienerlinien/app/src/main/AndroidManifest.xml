@@ -60,12 +60,6 @@
                 android:resource="@xml/widget_info" />
         </receiver>
 
-        <!-- Transit Map Activity -->
-        <activity
-            android:name=".ui.TransitMapActivity"
-            android:exported="false"
-            android:parentActivityName=".ui.MainActivity" />
-
         <!-- Departure Alarm Reminder Receiver -->
         <receiver
             android:name=".alarm.DepartureAlarmReceiver"
