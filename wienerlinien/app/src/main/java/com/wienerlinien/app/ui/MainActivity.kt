@@ -9,6 +9,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.os.CancellationSignal
 import android.os.Looper
 import android.view.View
 import android.widget.EditText
@@ -18,6 +19,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -43,6 +45,13 @@ class MainActivity : AppCompatActivity() {
     private var isDragging = false
     private val updateManager by lazy { AppUpdateManager(this) }
 
+    // Track active location requests so they are cleanly cancelled in onPause/onDestroy
+    private var locationCancellationSignal: CancellationSignal? = null
+    private var activeLocationListener: LocationListener? = null
+
+    // Pending departure reminder if waiting for Android 13+ notification permission
+    private var pendingAlarmRequest: Pair<DepartureItem, SavedStop>? = null
+
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -56,6 +65,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val pending = pendingAlarmRequest
+        pendingAlarmRequest = null
+        if (granted && pending != null) {
+            showDepartureReminderDialog(pending.first, pending.second)
+        } else if (!granted) {
+            Snackbar.make(binding.root, "Notification permission is required for departure alarms", Snackbar.LENGTH_LONG).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -65,7 +86,6 @@ class MainActivity : AppCompatActivity() {
         setupObservers()
         setupClickListeners()
 
-        viewModel.startAutoRefresh()
         checkAppUpdate(isManual = false)
     }
 
@@ -75,17 +95,19 @@ class MainActivity : AppCompatActivity() {
             onEditStop = { stop ->
                 if (stop.id > 0) {
                     val intent = Intent(this, AddStopActivity::class.java).apply {
-                        putExtra("EXTRA_STOP_ID", stop.id)
+                        putExtra(AddStopActivity.EXTRA_STOP_ID, stop.id)
                     }
                     startActivity(intent)
                 } else {
-                    // Temporary nearby stop: save directly
-                    viewModel.saveStop(stop.copy(id = 0))
+                    // Temporary nearby stop: save cleanly without distance suffix in customLabel
+                    viewModel.saveStop(stop.copy(id = 0, customLabel = null))
                     Snackbar.make(binding.root, "Added ${stop.stopName} to saved stops", Snackbar.LENGTH_SHORT).show()
                 }
             },
             onStartDrag = { holder ->
-                itemTouchHelper.startDrag(holder)
+                if (viewModel.currentFilter.value == MainViewModel.FilterMode.ALL) {
+                    itemTouchHelper.startDrag(holder)
+                }
             },
             onDepartureClick = { dep, stop ->
                 showDepartureReminderDialog(dep, stop)
@@ -133,7 +155,9 @@ class MainActivity : AppCompatActivity() {
                     view.scaleX = 1.0f
                     view.scaleY = 1.0f
                 }
-                viewModel.reorderStops(adapter.getOrderedStops())
+                if (viewModel.currentFilter.value == MainViewModel.FilterMode.ALL) {
+                    viewModel.reorderStops(adapter.getOrderedStops())
+                }
             }
 
             override fun isLongPressDragEnabled(): Boolean = false
@@ -226,13 +250,13 @@ class MainActivity : AppCompatActivity() {
             when (filter) {
                 MainViewModel.FilterMode.HOME -> {
                     binding.emptyStateTitle.text = "No Home station set"
-                    binding.emptyStateSubtitle.text = "Tag your primary station as Home to view its departures here."
-                    binding.emptyStateAddBtn.text = "Add a Stop"
+                    binding.emptyStateSubtitle.text = "Long-press a saved station or add one to tag it as Home."
+                    binding.emptyStateAddBtn.text = "Add Home Stop"
                 }
                 MainViewModel.FilterMode.WORK -> {
                     binding.emptyStateTitle.text = "No Work station set"
-                    binding.emptyStateSubtitle.text = "Tag your office station as Work to view its departures here."
-                    binding.emptyStateAddBtn.text = "Add a Stop"
+                    binding.emptyStateSubtitle.text = "Long-press a saved station or add one to tag it as Work."
+                    binding.emptyStateAddBtn.text = "Add Work Stop"
                 }
                 MainViewModel.FilterMode.NEARBY -> {
                     binding.emptyStateTitle.text = "No nearby stations found"
@@ -250,7 +274,12 @@ class MainActivity : AppCompatActivity() {
             binding.recyclerView.visibility = View.VISIBLE
         }
 
-        adapter.submitData(displayStops, departures, disruptions)
+        adapter.submitData(
+            stops = displayStops,
+            deps = departures,
+            disruptions = disruptions,
+            reorderEnabled = (filter == MainViewModel.FilterMode.ALL)
+        )
     }
 
     private fun setupClickListeners() {
@@ -286,10 +315,15 @@ class MainActivity : AppCompatActivity() {
 
         // Empty state action button
         binding.emptyStateAddBtn.setOnClickListener {
-            val filter = viewModel.currentFilter.value ?: MainViewModel.FilterMode.ALL
-            when (filter) {
+            when (viewModel.currentFilter.value ?: MainViewModel.FilterMode.ALL) {
                 MainViewModel.FilterMode.NEARBY -> fetchNearbyStopsWithLocation()
-                else -> startActivity(Intent(this, AddStopActivity::class.java))
+                MainViewModel.FilterMode.HOME -> startActivity(
+                    Intent(this, AddStopActivity::class.java).putExtra(AddStopActivity.EXTRA_PRESELECT_HOME, true)
+                )
+                MainViewModel.FilterMode.WORK -> startActivity(
+                    Intent(this, AddStopActivity::class.java).putExtra(AddStopActivity.EXTRA_PRESELECT_WORK, true)
+                )
+                MainViewModel.FilterMode.ALL -> startActivity(Intent(this, AddStopActivity::class.java))
             }
         }
 
@@ -301,6 +335,17 @@ class MainActivity : AppCompatActivity() {
         // More options / Update menu
         binding.menuBtn.setOnClickListener { view ->
             showOptionsMenu(view)
+        }
+    }
+
+    private fun cancelActiveLocationRequest() {
+        locationCancellationSignal?.cancel()
+        locationCancellationSignal = null
+        val listener = activeLocationListener
+        if (listener != null) {
+            val locationManager = getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+            locationManager?.removeUpdates(listener)
+            activeLocationListener = null
         }
     }
 
@@ -320,22 +365,49 @@ class MainActivity : AppCompatActivity() {
 
         if (location != null) {
             viewModel.searchNearbyStops(location.latitude, location.longitude)
-        } else {
-            val listener = object : LocationListener {
-                override fun onLocationChanged(loc: Location) {
-                    locationManager.removeUpdates(this)
-                    viewModel.searchNearbyStops(loc.latitude, loc.longitude)
+            return
+        }
+
+        val isGps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        val isNet = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        if (!isGps && !isNet) {
+            Snackbar.make(binding.root, "Please enable Location in system settings", Snackbar.LENGTH_LONG).show()
+            return
+        }
+        val provider = if (isGps) LocationManager.GPS_PROVIDER else LocationManager.NETWORK_PROVIDER
+
+        cancelActiveLocationRequest()
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val signal = CancellationSignal()
+                locationCancellationSignal = signal
+                locationManager.getCurrentLocation(
+                    provider,
+                    signal,
+                    ContextCompat.getMainExecutor(this)
+                ) { loc ->
+                    locationCancellationSignal = null
+                    if (loc != null) {
+                        viewModel.searchNearbyStops(loc.latitude, loc.longitude)
+                    } else if (!isFinishing && !isDestroyed) {
+                        Snackbar.make(binding.root, "Unable to acquire current location", Snackbar.LENGTH_SHORT).show()
+                    }
                 }
-                @Deprecated("Deprecated in Java")
-                override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
-            }
-            val isGps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-            val provider = if (isGps) LocationManager.GPS_PROVIDER else LocationManager.NETWORK_PROVIDER
-            try {
+            } else {
+                val listener = object : LocationListener {
+                    override fun onLocationChanged(loc: Location) {
+                        cancelActiveLocationRequest()
+                        viewModel.searchNearbyStops(loc.latitude, loc.longitude)
+                    }
+                    @Deprecated("Deprecated in Java")
+                    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+                }
+                activeLocationListener = listener
+                @Suppress("DEPRECATION")
                 locationManager.requestSingleUpdate(provider, listener, Looper.getMainLooper())
-            } catch (e: Exception) {
-                Snackbar.make(binding.root, "Unable to acquire current location", Snackbar.LENGTH_SHORT).show()
             }
+        } catch (_: Exception) {
+            Snackbar.make(binding.root, "Unable to acquire current location", Snackbar.LENGTH_SHORT).show()
         }
     }
 
@@ -387,7 +459,8 @@ class MainActivity : AppCompatActivity() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+                pendingAlarmRequest = dep to stop
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 return
             }
         }
@@ -507,8 +580,12 @@ class MainActivity : AppCompatActivity() {
             .setView(container)
             .setPositiveButton("Save") { _, _ ->
                 val newUrl = input.text.toString().trim()
-                updateManager.setUpdateUrl(newUrl.ifBlank { null })
-                Snackbar.make(binding.root, "Update URL updated", Snackbar.LENGTH_SHORT).show()
+                if (newUrl.isNotBlank() && !AppUpdateManager.isValidHttpUrl(newUrl)) {
+                    Snackbar.make(binding.root, "URL must start with http:// or https://", Snackbar.LENGTH_LONG).show()
+                } else {
+                    updateManager.setUpdateUrl(newUrl.ifBlank { null })
+                    Snackbar.make(binding.root, "Update URL updated", Snackbar.LENGTH_SHORT).show()
+                }
             }
             .setNeutralButton("Reset Default") { _, _ ->
                 updateManager.setUpdateUrl(null)
@@ -526,5 +603,11 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         viewModel.stopAutoRefresh()
+        cancelActiveLocationRequest()
+    }
+
+    override fun onDestroy() {
+        cancelActiveLocationRequest()
+        super.onDestroy()
     }
 }

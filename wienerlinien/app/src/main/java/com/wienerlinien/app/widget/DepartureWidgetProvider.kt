@@ -46,13 +46,14 @@ class DepartureWidgetProvider : AppWidgetProvider() {
          * Safe to call from foreground activity or background workers.
          */
         fun updateAllWidgets(context: Context, forceRefresh: Boolean = false) {
-            val manager = AppWidgetManager.getInstance(context)
+            val appContext = context.applicationContext
+            val manager = AppWidgetManager.getInstance(appContext)
             val ids = manager.getAppWidgetIds(
-                ComponentName(context, DepartureWidgetProvider::class.java)
+                ComponentName(appContext, DepartureWidgetProvider::class.java)
             )
             if (ids.isNotEmpty()) {
                 CoroutineScope(Dispatchers.IO).launch {
-                    updateWidgets(context, manager, ids, forceRefresh)
+                    updateWidgets(appContext, manager, ids, forceRefresh)
                 }
             }
         }
@@ -159,7 +160,7 @@ class DepartureWidgetProvider : AppWidgetProvider() {
                     } else {
                         stopDeps
                     }
-                    finalItems.addAll(filtered.take(targetCount))
+                    finalItems.addAll(filtered.sortedBy { it.countdown }.take(targetCount))
                 }
                 finalItems.sortBy { it.countdown }
             }
@@ -240,6 +241,12 @@ class DepartureWidgetProvider : AppWidgetProvider() {
             return views
         }
 
+        fun getWidgetBackgroundRes(opacity: Int): Int = when (opacity) {
+            20 -> R.drawable.bg_widget_clear
+            60 -> R.drawable.bg_widget_glass
+            else -> R.drawable.bg_widget
+        }
+
         fun buildErrorView(context: Context, widgetId: Int, message: String): RemoteViews {
             val views = RemoteViews(context.packageName, R.layout.widget_departure)
             views.setInt(R.id.widgetRefreshBtn, "setColorFilter", 0xAAFFFFFF.toInt())
@@ -247,7 +254,7 @@ class DepartureWidgetProvider : AppWidgetProvider() {
             views.setTextColor(R.id.widgetStatus, Color.parseColor("#FF9F0A"))
             views.setViewVisibility(R.id.widgetStatus, View.VISIBLE)
             hideAllRows(views)
-            setRefreshAction(context, views, widgetId)
+            setRefreshAction(context, views, widgetId, bindStatusToRefresh = true)
             setOpenAppAction(context, views)
             return views
         }
@@ -282,14 +289,7 @@ class DepartureWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_departure)
             views.setInt(R.id.widgetRefreshBtn, "setColorFilter", 0xFFFFFFFF.toInt())
 
-            if (config.opacity < 100) {
-                val alpha = when (config.opacity) {
-                    20 -> 0x33
-                    60 -> 0x99
-                    else -> 0xE6
-                }
-                views.setInt(R.id.widgetContainer, "setBackgroundColor", Color.argb(alpha, 28, 28, 30))
-            }
+            views.setInt(R.id.widgetContainer, "setBackgroundResource", getWidgetBackgroundRes(config.opacity))
 
             // Header title: if all stops share the same name/label, show it, otherwise "Wiener Linien"
             val distinctLabels = config.stops.map {
@@ -359,7 +359,7 @@ class DepartureWidgetProvider : AppWidgetProvider() {
                 }
             }
 
-            setRefreshAction(context, views, widgetId)
+            setRefreshAction(context, views, widgetId, bindStatusToRefresh = isOffline || statusMessage != null)
             setOpenAppAction(context, views)
 
             return views
@@ -373,7 +373,12 @@ class DepartureWidgetProvider : AppWidgetProvider() {
             rows.forEach { views.setViewVisibility(it, View.GONE) }
         }
 
-        private fun setRefreshAction(context: Context, views: RemoteViews, widgetId: Int) {
+        private fun setRefreshAction(
+            context: Context,
+            views: RemoteViews,
+            widgetId: Int,
+            bindStatusToRefresh: Boolean = false
+        ) {
             val intent = Intent(context, DepartureWidgetProvider::class.java).apply {
                 action = ACTION_REFRESH
                 putExtra(EXTRA_WIDGET_ID, widgetId)
@@ -385,6 +390,9 @@ class DepartureWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.widgetRefreshBtn, pi)
             views.setOnClickPendingIntent(R.id.widgetRefreshArea, pi)
+            if (bindStatusToRefresh) {
+                views.setOnClickPendingIntent(R.id.widgetStatus, pi)
+            }
         }
 
         private fun setOpenAppAction(context: Context, views: RemoteViews) {

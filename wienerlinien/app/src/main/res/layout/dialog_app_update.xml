@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="24dp"
-    android:background="@drawable/bg_widget">
+    android:background="@color/surface_elevated">
 
     <!-- Header Icon -->
     <ImageView
@@ -51,7 +51,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:background="@drawable/bg_line_chip"
-        android:backgroundTint="@color/surface"
+        android:backgroundTint="@color/background"
         android:padding="14dp"
         android:layout_marginBottom="16dp">
 

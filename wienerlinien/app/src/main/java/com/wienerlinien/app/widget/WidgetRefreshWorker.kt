@@ -42,7 +42,9 @@ class WidgetRefreshWorker(
                 }
             }
             Result.success()
-        } catch (e: Exception) {
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (_: Exception) {
             Result.retry()
         }
     }

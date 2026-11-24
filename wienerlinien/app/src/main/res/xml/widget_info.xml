@@ -10,6 +10,7 @@
     android:configure="com.wienerlinien.app.widget.WidgetConfigureActivity"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable"
     android:description="@string/widget_label"
     android:previewLayout="@layout/widget_departure">
     <!--

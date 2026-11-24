@@ -20,11 +20,19 @@ import com.wienerlinien.app.model.AppDatabase
 import com.wienerlinien.app.model.DepartureRepository
 import com.wienerlinien.app.model.SavedStop
 import com.wienerlinien.app.util.StopSearchUtil
+import com.wienerlinien.app.widget.DepartureWidgetProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class AddStopActivity : AppCompatActivity() {
+
+    companion object {
+        const val EXTRA_STOP_ID = "EXTRA_STOP_ID"
+        const val EXTRA_PRESELECT_HOME = "EXTRA_PRESELECT_HOME"
+        const val EXTRA_PRESELECT_WORK = "EXTRA_PRESELECT_WORK"
+    }
 
     private lateinit var binding: ActivityAddStopBinding
     private lateinit var searchAdapter: StopSearchAdapter
@@ -37,6 +45,8 @@ class AddStopActivity : AppCompatActivity() {
     private var selectedPlatform: String? = null
     private var selectedServedLines: String? = null
     private var editingStopId: Int? = null
+    private var editingStopSortOrder: Int = 0
+    private var editingStopAddedAt: Long? = null
     private var searchJob: Job? = null
     private var previewJob: Job? = null
     private var isUpdatingFromSelection = false
@@ -46,7 +56,7 @@ class AddStopActivity : AppCompatActivity() {
         binding = ActivityAddStopBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        editingStopId = intent.getIntExtra("EXTRA_STOP_ID", -1).takeIf { it != -1 }
+        editingStopId = intent.getIntExtra(EXTRA_STOP_ID, -1).takeIf { it != -1 }
 
         setupToolbar()
         setupSearchResults()
@@ -56,6 +66,9 @@ class AddStopActivity : AppCompatActivity() {
 
         if (editingStopId != null) {
             loadStopForEditing(editingStopId!!)
+        } else {
+            binding.chipHomeProfile.isChecked = intent.getBooleanExtra(EXTRA_PRESELECT_HOME, false)
+            binding.chipWorkProfile.isChecked = intent.getBooleanExtra(EXTRA_PRESELECT_WORK, false)
         }
     }
 
@@ -68,9 +81,9 @@ class AddStopActivity : AppCompatActivity() {
 
     private fun loadStopForEditing(id: Int) {
         lifecycleScope.launch {
-            val db = AppDatabase.getDatabase(this@AddStopActivity)
-            val repo = DepartureRepository(db)
-            val stop = repo.getAllStopsOnce().find { it.id == id } ?: return@launch
+            val stop = repository.getAllStopsOnce().find { it.id == id } ?: return@launch
+            editingStopSortOrder = stop.sortOrder
+            editingStopAddedAt = stop.addedAt
 
             onStopPicked(stop.rblNumber, stop.stopName, stop.lineName, stop.customLabel, stop.direction, stop.platformLines)
 
@@ -237,7 +250,9 @@ class AddStopActivity : AppCompatActivity() {
                         binding.previewDeparturesContainer.addView(row)
                     }
                 }
-            } catch (e: Exception) {
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
                 binding.previewProgress.visibility = View.GONE
                 binding.previewStatus.text = "Live preview unavailable offline"
                 binding.previewStatus.visibility = View.VISIBLE
@@ -336,21 +351,30 @@ class AddStopActivity : AppCompatActivity() {
             val isHome = binding.chipHomeProfile.isChecked
             val isWork = binding.chipWorkProfile.isChecked
 
-            val stop = SavedStop(
-                id = editingStopId ?: 0,
-                rblNumber = rbl,
-                stopName = selectedStopName,
-                lineName = lineName,
-                lineType = null,  // Detected dynamically from API
-                direction = selectedPlatform,
-                platformLines = selectedServedLines,
-                customLabel = customLabel,
-                maxDepartures = maxDeps,
-                isHome = isHome,
-                isWork = isWork
-            )
-
             lifecycleScope.launch {
+                val sortOrder = if (editingStopId != null) {
+                    editingStopSortOrder
+                } else {
+                    val existing = repository.getAllStopsOnce()
+                    (existing.maxOfOrNull { it.sortOrder } ?: -1) + 1
+                }
+
+                val stop = SavedStop(
+                    id = editingStopId ?: 0,
+                    rblNumber = rbl,
+                    stopName = selectedStopName,
+                    lineName = lineName,
+                    lineType = null,  // Detected dynamically from API
+                    direction = selectedPlatform,
+                    platformLines = selectedServedLines,
+                    customLabel = customLabel,
+                    maxDepartures = maxDeps,
+                    sortOrder = sortOrder,
+                    isHome = isHome,
+                    isWork = isWork,
+                    addedAt = editingStopAddedAt ?: System.currentTimeMillis()
+                )
+
                 if (editingStopId != null) {
                     repository.updateStop(stop)
                     Toast.makeText(this@AddStopActivity, "Stop updated!", Toast.LENGTH_SHORT).show()
@@ -358,6 +382,7 @@ class AddStopActivity : AppCompatActivity() {
                     repository.saveStop(stop)
                     Toast.makeText(this@AddStopActivity, "Stop added!", Toast.LENGTH_SHORT).show()
                 }
+                DepartureWidgetProvider.updateAllWidgets(this@AddStopActivity, forceRefresh = false)
                 finish()
             }
         }

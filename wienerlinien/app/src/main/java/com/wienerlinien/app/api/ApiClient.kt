@@ -1,5 +1,6 @@
 package com.wienerlinien.app.api
 
+import com.wienerlinien.app.BuildConfig
 import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
@@ -18,7 +19,7 @@ object ApiClient {
     private const val TIMEOUT_SECONDS = 15L
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BASIC
+        level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
     }
 
     /**
@@ -30,9 +31,13 @@ object ApiClient {
 
         override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
             if (cookies.isNotEmpty()) {
-                val existing = cookieStore[url.host] ?: emptyList()
-                val updated = (existing.filter { old -> cookies.none { it.name == old.name } } + cookies)
-                cookieStore[url.host] = updated
+                val now = System.currentTimeMillis()
+                cookieStore.compute(url.host) { _, existing ->
+                    val validExisting = (existing ?: emptyList()).filter { old ->
+                        old.expiresAt > now && cookies.none { it.name == old.name }
+                    }
+                    validExisting + cookies
+                }
             }
         }
 
@@ -50,7 +55,7 @@ object ApiClient {
         .addInterceptor { chain ->
             val request = chain.request().newBuilder()
                 .header("Accept", "application/json")
-                .header("User-Agent", "WienerLinien-Android/1.0 (Android 14; Mobile)")
+                .header("User-Agent", "WienerLinien-Android/${BuildConfig.VERSION_NAME} (Android; Mobile)")
                 .build()
             chain.proceed(request)
         }

@@ -24,8 +24,11 @@ object StopSearchUtil {
     private const val URL_LINES = "${BASE_URL}wienerlinien-ogd-linien.csv"
     private const val URL_STEIGE = "${BASE_URL}wienerlinien-ogd-steige.csv"
 
+    @Volatile
     private var cachedStops: List<StopSearchResult>? = null
+    @Volatile
     private var cacheTime: Long = 0
+    private val cacheLock = Any()
     private const val CACHE_TTL_MS = 24 * 60 * 60 * 1000L // 24 hours
 
     private val client = OkHttpClient.Builder()
@@ -106,31 +109,40 @@ object StopSearchUtil {
         results.take(limit)
     }
 
-    private suspend fun getOrFetchStops(): List<StopSearchResult> {
+    private fun getOrFetchStops(): List<StopSearchResult> {
         val now = System.currentTimeMillis()
-        if (cachedStops != null && now - cacheTime < CACHE_TTL_MS) {
-            return cachedStops!!
+        val existing = cachedStops
+        if (existing != null && now - cacheTime < CACHE_TTL_MS) {
+            return existing
         }
 
-        // 1. Fast load from bundled asset (complete 4,029 stops dataset, instantaneous)
-        val bundledResult = loadBundledStops()
-        if (bundledResult.isNotEmpty()) {
-            cachedStops = bundledResult
-            cacheTime = now
-            return bundledResult
-        }
-
-        // 2. Fallback to online fetch if asset is missing and not forced offline
-        if (!forceOfflineForTesting) {
-            val liveResult = fetchEnrichedData()
-            if (liveResult.isNotEmpty()) {
-                cachedStops = liveResult
-                cacheTime = now
-                return liveResult
+        synchronized(cacheLock) {
+            val lockedNow = System.currentTimeMillis()
+            val lockedExisting = cachedStops
+            if (lockedExisting != null && lockedNow - cacheTime < CACHE_TTL_MS) {
+                return lockedExisting
             }
-        }
 
-        return emptyList()
+            // 1. Fast load from bundled asset (complete 4,029 stops dataset, instantaneous)
+            val bundledResult = loadBundledStops()
+            if (bundledResult.isNotEmpty()) {
+                cachedStops = bundledResult
+                cacheTime = lockedNow
+                return bundledResult
+            }
+
+            // 2. Fallback to online fetch if asset is missing and not forced offline
+            if (!forceOfflineForTesting) {
+                val liveResult = fetchEnrichedData()
+                if (liveResult.isNotEmpty()) {
+                    cachedStops = liveResult
+                    cacheTime = lockedNow
+                    return liveResult
+                }
+            }
+
+            return emptyList()
+        }
     }
 
     fun loadBundledStops(): List<StopSearchResult> {
@@ -187,8 +199,10 @@ object StopSearchUtil {
             val lineMap = fetchLines()
             val stopMap = fetchHaltestellen()
 
-            val response = client.newCall(Request.Builder().url(URL_STEIGE).build()).execute()
-            val body = response.body?.string() ?: return emptyList()
+            val body = client.newCall(Request.Builder().url(URL_STEIGE).build()).execute().use { response ->
+                if (!response.isSuccessful) return emptyList()
+                response.body?.string()
+            } ?: return emptyList()
 
             val rblMap = mutableMapOf<Int, TempStop>()
             BufferedReader(StringReader(body)).use { reader ->
@@ -240,8 +254,10 @@ object StopSearchUtil {
     private fun fetchHaltestellen(): Map<Int, Pair<String, String>> {
         val map = mutableMapOf<Int, Pair<String, String>>()
         try {
-            val response = client.newCall(Request.Builder().url(URL_HALTESTELLEN).build()).execute()
-            val body = response.body?.string() ?: return map
+            val body = client.newCall(Request.Builder().url(URL_HALTESTELLEN).build()).execute().use { response ->
+                if (!response.isSuccessful) return map
+                response.body?.string()
+            } ?: return map
             BufferedReader(StringReader(body)).use { reader ->
                 reader.readLine()
                 reader.forEachLine { line ->
@@ -263,8 +279,10 @@ object StopSearchUtil {
     private fun fetchLines(): Map<Int, String> {
         val map = mutableMapOf<Int, String>()
         try {
-            val response = client.newCall(Request.Builder().url(URL_LINES).build()).execute()
-            val body = response.body?.string() ?: return map
+            val body = client.newCall(Request.Builder().url(URL_LINES).build()).execute().use { response ->
+                if (!response.isSuccessful) return map
+                response.body?.string()
+            } ?: return map
             BufferedReader(StringReader(body)).use { reader ->
                 reader.readLine()
                 reader.forEachLine { line ->

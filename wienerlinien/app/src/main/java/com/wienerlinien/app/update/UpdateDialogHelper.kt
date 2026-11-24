@@ -5,13 +5,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.wienerlinien.app.R
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 object UpdateDialogHelper {
@@ -56,19 +54,28 @@ object UpdateDialogHelper {
             updateNowBtn.isEnabled = false
             updateNowBtn.text = "Downloading…"
             laterBtn.isEnabled = false
+            progressBar.isIndeterminate = true
             progressBar.visibility = View.VISIBLE
             statusText.visibility = View.VISIBLE
             statusText.text = "Connecting…"
 
             scope.launch {
                 val result = updateManager.downloadApk(updateInfo) { progress ->
+                    if (activity.isFinishing || activity.isDestroyed) return@downloadApk
+                    if (progressBar.isIndeterminate) {
+                        progressBar.isIndeterminate = false
+                    }
                     progressBar.progress = progress
                     statusText.text = "Downloading update… $progress%"
                 }
 
+                if (activity.isFinishing || activity.isDestroyed) return@launch
+
                 result.onSuccess { apkFile ->
                     statusText.text = "Download complete. Starting install…"
-                    dialog.dismiss()
+                    if (dialog.isShowing) {
+                        dialog.dismiss()
+                    }
                     updateManager.installApk(apkFile)
                 }
 

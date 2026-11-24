@@ -8,6 +8,13 @@ import android.os.Build
 
 object DepartureAlarmManager {
 
+    internal fun computeLeadAndDelayMinutes(countdownMinutes: Int, minutesBefore: Int): Pair<Int, Int> {
+        val safeCountdown = maxOf(1, countdownMinutes)
+        val leadTime = minOf(maxOf(1, minutesBefore), maxOf(1, safeCountdown - 1))
+        val delayMinutes = maxOf(0, safeCountdown - leadTime)
+        return leadTime to delayMinutes
+    }
+
     fun scheduleDepartureReminder(
         context: Context,
         lineName: String,
@@ -16,10 +23,9 @@ object DepartureAlarmManager {
         countdownMinutes: Int,
         minutesBefore: Int = 3
     ): Boolean {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return false
 
-        val leadTime = minOf(minutesBefore, maxOf(1, countdownMinutes - 1))
-        val delayMinutes = countdownMinutes - leadTime
+        val (leadTime, delayMinutes) = computeLeadAndDelayMinutes(countdownMinutes, minutesBefore)
         val triggerAtMillis = System.currentTimeMillis() + (delayMinutes * 60_000L)
 
         val intent = Intent(context, DepartureAlarmReceiver::class.java).apply {
@@ -29,7 +35,7 @@ object DepartureAlarmManager {
             putExtra(DepartureAlarmReceiver.EXTRA_MINUTES, leadTime)
         }
 
-        val requestCode = (lineName.hashCode() xor stopName.hashCode() xor countdownMinutes).toInt()
+        val requestCode = lineName.hashCode() xor stopName.hashCode() xor countdownMinutes
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             requestCode,
@@ -38,21 +44,34 @@ object DepartureAlarmManager {
         )
 
         return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val canScheduleExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+            if (canScheduleExact) {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     triggerAtMillis,
                     pendingIntent
                 )
             } else {
-                alarmManager.set(
+                // Graceful fallback on Android 12+ when exact alarm permission is not granted
+                alarmManager.setAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     triggerAtMillis,
                     pendingIntent
                 )
             }
             true
-        } catch (e: Exception) {
+        } catch (_: SecurityException) {
+            try {
+                alarmManager.setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerAtMillis,
+                    pendingIntent
+                )
+                true
+            } catch (_: Exception) {
+                false
+            }
+        } catch (_: Exception) {
             false
         }
     }

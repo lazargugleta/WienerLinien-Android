@@ -130,6 +130,26 @@ class RoomChallengeTest {
         }
     }
 
+    @Test
+    fun migration4To5_executesExpectedAlterTableStatements() {
+        val migration = AppDatabase.MIGRATION_4_5
+        assertThat(migration.startVersion).isEqualTo(4)
+        assertThat(migration.endVersion).isEqualTo(5)
+
+        val mockSqliteDb = mock<SupportSQLiteDatabase>()
+        val executed = mutableListOf<String>()
+        whenever(mockSqliteDb.execSQL(any())).thenAnswer { invocation ->
+            executed.add(invocation.getArgument(0))
+            null
+        }
+
+        migration.migrate(mockSqliteDb)
+
+        assertThat(executed).hasSize(2)
+        assertThat(executed[0]).contains("ALTER TABLE `saved_stops` ADD COLUMN `isHome` INTEGER NOT NULL DEFAULT 0")
+        assertThat(executed[1]).contains("ALTER TABLE `saved_stops` ADD COLUMN `isWork` INTEGER NOT NULL DEFAULT 0")
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // 2. Concurrency & Transaction Safety in DepartureDao
     // ══════════════════════════════════════════════════════════════════════════

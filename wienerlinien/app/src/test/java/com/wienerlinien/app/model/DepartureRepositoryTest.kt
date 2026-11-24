@@ -473,4 +473,61 @@ class DepartureRepositoryTest {
             assertThat(firstValue[1].sortOrder).isEqualTo(1)
         }
     }
+
+    @Test
+    fun fetchDepartures_cancellationException_isRethrownNotSwallowed() = runTest {
+        val rbl = 4116
+        whenever(mockApi.getMonitor(eq(listOf(rbl)), any()))
+            .thenThrow(kotlinx.coroutines.CancellationException("Job cancelled"))
+
+        var caughtCancellation = false
+        try {
+            repository.fetchDepartures(listOf(rbl))
+        } catch (_: kotlinx.coroutines.CancellationException) {
+            caughtCancellation = true
+        }
+
+        assertThat(caughtCancellation).isTrue()
+        verify(mockCachedDepartureDao, never()).getDeparturesForRbls(any())
+    }
+
+    @Test
+    fun updateStopCommute_updatesOnlyTargetStopWithoutClearingOtherStops() = runTest {
+        val stop = SavedStop(
+            id = 7,
+            rblNumber = 1876,
+            stopName = "Knöllgasse/Troststraße",
+            lineName = "1",
+            lineType = "ptTram",
+            direction = "1",
+            platformLines = "1",
+            customLabel = null,
+            isHome = false,
+            isWork = false
+        )
+        whenever(mockSavedStopDao.getById(7)).thenReturn(stop)
+
+        repository.updateStopCommute(stopId = 7, isHome = true, isWork = true)
+
+        verify(mockSavedStopDao).update(stop.copy(isHome = true, isWork = true))
+        verify(mockSavedStopDao, never()).updateAll(any())
+    }
+
+    @Test
+    fun fetchDisruptions_success_returnsTrafficInfos() = runTest {
+        val item = TrafficInfoItem(
+            name = "65A_accident",
+            title = "65A: Verkehrsunfall",
+            description = "Delays on line 65A",
+            relatedLines = listOf("65A"),
+            relatedStops = listOf(1398)
+        )
+        val body = TrafficInfoResponse(TrafficInfoData(listOf(item)))
+        whenever(mockApi.getTrafficInfoList(anyOrNull())).thenReturn(Response.success(body))
+
+        val result = repository.fetchDisruptions()
+
+        assertThat(result.isSuccess).isTrue()
+        assertThat(result.getOrThrow()).containsExactly(item)
+    }
 }

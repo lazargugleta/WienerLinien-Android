@@ -3,12 +3,13 @@ package com.wienerlinien.app.update
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.google.gson.Gson
 import com.wienerlinien.app.BuildConfig
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -32,6 +33,16 @@ class AppUpdateManager(private val context: Context) {
 
         // Minimum time between automatic background checks (6 hours)
         private const val AUTO_CHECK_COOLDOWN_MS = 6 * 3600 * 1000L
+
+        internal fun sanitizeVersionForFilename(versionName: String): String {
+            return versionName.replace(Regex("[^a-zA-Z0-9._-]"), "_").ifBlank { "update" }
+        }
+
+        internal fun isValidHttpUrl(url: String?): Boolean {
+            if (url.isNullOrBlank()) return false
+            val trimmed = url.trim().lowercase()
+            return trimmed.startsWith("https://") || trimmed.startsWith("http://")
+        }
     }
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -67,22 +78,23 @@ class AppUpdateManager(private val context: Context) {
         overrideUrl: String? = null
     ): Result<UpdateInfo?> = withContext(Dispatchers.IO) {
         val targetUrl = overrideUrl ?: getUpdateUrl()
+        if (!isValidHttpUrl(targetUrl)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid update URL"))
+        }
         try {
             val request = Request.Builder()
                 .url(targetUrl)
                 .header("User-Agent", "WienerLinien-Android/${BuildConfig.VERSION_NAME}")
                 .build()
 
-            val response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful) {
-                return@withContext Result.failure(
-                    Exception("Failed to check for updates: HTTP ${response.code}")
-                )
-            }
-
-            val bodyString = response.body?.string() ?: return@withContext Result.failure(
-                Exception("Empty update response")
-            )
+            val bodyString = httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return@withContext Result.failure(
+                        Exception("Failed to check for updates: HTTP ${response.code}")
+                    )
+                }
+                response.body?.string()
+            } ?: return@withContext Result.failure(Exception("Empty update response"))
 
             val updateInfo = gson.fromJson(bodyString, UpdateInfo::class.java)
                 ?: return@withContext Result.failure(Exception("Invalid update format"))
@@ -94,6 +106,8 @@ class AppUpdateManager(private val context: Context) {
             } else {
                 Result.success(null)
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -107,57 +121,68 @@ class AppUpdateManager(private val context: Context) {
         updateInfo: UpdateInfo,
         onProgress: (Int) -> Unit
     ): Result<File> = withContext(Dispatchers.IO) {
+        if (!isValidHttpUrl(updateInfo.apkUrl)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid APK download URL"))
+        }
+
+        val downloadDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+            ?: context.cacheDir
+        val safeVersion = sanitizeVersionForFilename(updateInfo.versionName)
+        val apkFile = File(downloadDir, "wienerlinien_v$safeVersion.apk")
+
         try {
             val request = Request.Builder()
                 .url(updateInfo.apkUrl)
+                .header("User-Agent", "WienerLinien-Android/${BuildConfig.VERSION_NAME}")
                 .build()
 
-            val response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful) {
-                return@withContext Result.failure(
-                    Exception("Download failed: HTTP ${response.code}")
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return@withContext Result.failure(
+                        Exception("Download failed: HTTP ${response.code}")
+                    )
+                }
+
+                val body = response.body ?: return@withContext Result.failure(
+                    Exception("Download body is null")
                 )
-            }
 
-            val body = response.body ?: return@withContext Result.failure(
-                Exception("Download body is null")
-            )
+                val totalBytes = body.contentLength()
+                if (apkFile.exists()) {
+                    apkFile.delete()
+                }
 
-            val totalBytes = body.contentLength()
-            val downloadDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-                ?: context.cacheDir
+                body.byteStream().use { input ->
+                    FileOutputStream(apkFile).use { output ->
+                        val buffer = ByteArray(8192)
+                        var bytesRead: Int
+                        var totalRead = 0L
+                        var lastPercent = -1
 
-            val apkFile = File(downloadDir, "wienerlinien_v${updateInfo.versionName}.apk")
-            if (apkFile.exists()) {
-                apkFile.delete()
-            }
-
-            body.byteStream().use { input ->
-                FileOutputStream(apkFile).use { output ->
-                    val buffer = ByteArray(8192)
-                    var bytesRead: Int
-                    var totalRead = 0L
-                    var lastPercent = -1
-
-                    while (input.read(buffer).also { bytesRead = it } != -1) {
-                        output.write(buffer, 0, bytesRead)
-                        totalRead += bytesRead
-                        if (totalBytes > 0) {
-                            val percent = ((totalRead * 100) / totalBytes).toInt()
-                            if (percent != lastPercent) {
-                                lastPercent = percent
-                                withContext(Dispatchers.Main) {
-                                    onProgress(percent)
+                        while (input.read(buffer).also { bytesRead = it } != -1) {
+                            output.write(buffer, 0, bytesRead)
+                            totalRead += bytesRead
+                            if (totalBytes > 0) {
+                                val percent = ((totalRead * 100) / totalBytes).toInt().coerceIn(0, 100)
+                                if (percent != lastPercent) {
+                                    lastPercent = percent
+                                    withContext(Dispatchers.Main) {
+                                        onProgress(percent)
+                                    }
                                 }
                             }
                         }
+                        output.flush()
                     }
-                    output.flush()
                 }
             }
 
             Result.success(apkFile)
+        } catch (e: CancellationException) {
+            if (apkFile.exists()) apkFile.delete()
+            throw e
         } catch (e: Exception) {
+            if (apkFile.exists()) apkFile.delete()
             Result.failure(e)
         }
     }
@@ -168,16 +193,19 @@ class AppUpdateManager(private val context: Context) {
     fun installApk(apkFile: File) {
         if (!apkFile.exists()) return
 
-        // On Android 8.0+ (Oreo), verify permission to install unknown apps
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (!context.packageManager.canRequestPackageInstalls()) {
-                val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                    data = Uri.parse("package:${context.packageName}")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(settingsIntent)
-                return
+        // Verify permission to install unknown apps (minSdk >= 26)
+        if (!context.packageManager.canRequestPackageInstalls()) {
+            Toast.makeText(
+                context,
+                "Allow 'Install unknown apps' for Wiener Linien, then retry update",
+                Toast.LENGTH_LONG
+            ).show()
+            val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                data = Uri.parse("package:${context.packageName}")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
+            context.startActivity(settingsIntent)
+            return
         }
 
         val apkUri: Uri = FileProvider.getUriForFile(

@@ -175,4 +175,30 @@ class AppUpdateManagerTest {
         manager.recordCheckTime()
         assertThat(manager.shouldCheckAutomatically()).isFalse()
     }
+
+    @Test
+    fun sanitizeVersionForFilename_stripsPathTraversalAndUnsafeChars() {
+        assertThat(AppUpdateManager.sanitizeVersionForFilename("1.2.3")).isEqualTo("1.2.3")
+        assertThat(AppUpdateManager.sanitizeVersionForFilename("../../evil/apk")).doesNotContain("/")
+        assertThat(AppUpdateManager.sanitizeVersionForFilename("..\\evil")).doesNotContain("\\")
+        assertThat(AppUpdateManager.sanitizeVersionForFilename("   ")).isEqualTo("___")
+        assertThat(AppUpdateManager.sanitizeVersionForFilename("")).isEqualTo("update")
+    }
+
+    @Test
+    fun isValidHttpUrl_acceptsOnlyHttpAndHttps() {
+        assertThat(AppUpdateManager.isValidHttpUrl("https://example.com/version.json")).isTrue()
+        assertThat(AppUpdateManager.isValidHttpUrl("http://192.168.0.64:8080/version.json")).isTrue()
+        assertThat(AppUpdateManager.isValidHttpUrl("file:///etc/passwd")).isFalse()
+        assertThat(AppUpdateManager.isValidHttpUrl("not a url")).isFalse()
+        assertThat(AppUpdateManager.isValidHttpUrl("")).isFalse()
+        assertThat(AppUpdateManager.isValidHttpUrl(null)).isFalse()
+    }
+
+    @Test
+    fun checkForUpdate_invalidUrl_returnsFailure() = runTest {
+        val manager = AppUpdateManager(mockContext)
+        val result = manager.checkForUpdate(currentVersionCode = 1, overrideUrl = "ftp://bad.example/version.json")
+        assertThat(result.isFailure).isTrue()
+    }
 }

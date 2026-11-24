@@ -28,8 +28,17 @@ class SelectedStopsAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
         holder.name.text = item.customLabel.takeIf { it.isNotBlank() } ?: item.stopName
-        holder.detail.text = "RBL ${item.rblNumber}"
-        holder.removeBtn.setOnClickListener { onRemove(position) }
+        holder.detail.text = if (item.lineName.isNotBlank()) {
+            "Line ${item.lineName} · RBL ${item.rblNumber}"
+        } else {
+            "All lines · RBL ${item.rblNumber}"
+        }
+        holder.removeBtn.setOnClickListener {
+            val adapterPos = holder.bindingAdapterPosition
+            if (adapterPos in items.indices) {
+                onRemove(adapterPos)
+            }
+        }
     }
 
     override fun getItemCount() = items.size

@@ -366,4 +366,32 @@ class WidgetFormattingTest {
         assertThat(processed[3].countdown).isEqualTo(15)
         assertThat(processed[3].rbl).isEqualTo(1876)
     }
+
+    @Test
+    fun processWidgetDepartures_unsortedInputTimelineMode_selectsEarliestPerStop() {
+        val unsortedDeps = listOf(
+            DepartureItem("1", "Stefan-Fadinger-Platz", "ptTram", 20, rbl = 1876),
+            DepartureItem("1", "Stefan-Fadinger-Platz", "ptTram", 4, rbl = 1876),
+            DepartureItem("65A", "Reumannplatz U", "ptBusCity", 18, rbl = 1398),
+            DepartureItem("65A", "Reumannplatz U", "ptBusCity", 1, rbl = 1398)
+        )
+        val config = WidgetPrefs.WidgetConfig(
+            stops = listOf(
+                WidgetPrefs.StopConfig(1876, "Knöllgasse", "", ""),
+                WidgetPrefs.StopConfig(1398, "Starhemberg", "", "")
+            ),
+            maxDepartures = 1,
+            groupByStation = false
+        )
+
+        val processed = DepartureWidgetProvider.processWidgetDepartures(config, unsortedDeps, maxVisibleRows = 4)
+        assertThat(processed.map { it.countdown }).containsExactly(1, 4).inOrder()
+    }
+
+    @Test
+    fun getWidgetBackgroundRes_mapsOpacityToRoundedDrawables() {
+        assertThat(DepartureWidgetProvider.getWidgetBackgroundRes(20)).isEqualTo(com.wienerlinien.app.R.drawable.bg_widget_clear)
+        assertThat(DepartureWidgetProvider.getWidgetBackgroundRes(60)).isEqualTo(com.wienerlinien.app.R.drawable.bg_widget_glass)
+        assertThat(DepartureWidgetProvider.getWidgetBackgroundRes(100)).isEqualTo(com.wienerlinien.app.R.drawable.bg_widget)
+    }
 }

@@ -1,8 +1,8 @@
 {
-  "versionCode": 3,
-  "versionName": "1.2",
+  "versionCode": 4,
+  "versionName": "1.3",
   "apkUrl": "https://github.com/lazargugleta/WienerLinien-Android/releases/latest/download/app-release.apk",
-  "changelog": "• Multiple Home & Work stations supported (e.g. tag both your local bus and tram)\n• Cleaner, symmetrical card design with crisp inline Home & Work badges\n• Simplified station card actions without clutter\n• Map feature removed",
-  "releaseDate": "2026-10-20",
+  "changelog": "• Fixed Android 12–14 departure alarms with graceful fallback\n• Fixed Nearby stops auto-refresh, loading state, and saving labels\n• Preserved station order when editing or adding stops\n• Reconfigurable widgets with proper rounded Glass & Clear styles and tap-to-retry\n• Quick Settings tile now respects line filters and formats 'now'\n• Fixed Light Mode update dialog readability and multiple stability/leak fixes",
+  "releaseDate": "2026-11-24",
   "isMandatory": false
 }

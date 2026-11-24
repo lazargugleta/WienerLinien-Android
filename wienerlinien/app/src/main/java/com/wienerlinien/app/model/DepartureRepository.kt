@@ -173,6 +173,8 @@ class DepartureRepository(
             }
             Result.success(items)
 
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             android.util.Log.w("DepartureRepository", "Network fetch failed for RBLs $validRbls, falling back to cache: ${e.message}")
             // Network failure: fallback to Room cache
@@ -314,6 +316,8 @@ class DepartureRepository(
         val remaining = (savedStopDao.getAllStopsOnce() as List<SavedStop>?) ?: emptyList()
         if (remaining.none { it.id != stop.id && it.rblNumber == stop.rblNumber }) {
             cachedDepartureDao.deleteForRbl(stop.rblNumber)
+            liveDeparturesCache.remove(stop.rblNumber)
+            lastFetchTimestamps.remove(stop.rblNumber)
         }
     }
 
@@ -325,6 +329,8 @@ class DepartureRepository(
         if (stop != null) {
             if (allStops.none { it.id != id && it.rblNumber == stop.rblNumber }) {
                 cachedDepartureDao.deleteForRbl(stop.rblNumber)
+                liveDeparturesCache.remove(stop.rblNumber)
+                lastFetchTimestamps.remove(stop.rblNumber)
             }
         }
     }
@@ -347,6 +353,8 @@ class DepartureRepository(
             } else {
                 Result.failure(Exception("HTTP ${response.code()}"))
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }

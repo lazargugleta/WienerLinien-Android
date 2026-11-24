@@ -47,6 +47,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
     // Temporary selection holder
     private var pendingRbl: Int? = null
     private var pendingName: String = ""
+    private var pendingCustomLabel: String = ""
     private var pendingPlatform: String? = null
     private var pendingServedLines: String? = null
 
@@ -81,7 +82,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
         // 1. Saved stops (chips)
         savedStopsAdapter = SavedStopsAdapter { stop ->
             // Click chip: review/edit before adding to widget
-            onStopPicked(stop.rblNumber, stop.stopName, stop.direction, stop.platformLines, stop.lineName)
+            onStopPicked(stop.rblNumber, stop.stopName, stop.direction, stop.platformLines, stop.lineName, stop.customLabel)
         }
         binding.savedStopsList.apply {
             layoutManager = LinearLayoutManager(this@WidgetConfigureActivity, LinearLayoutManager.HORIZONTAL, false)
@@ -90,7 +91,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
 
         // 2. Search results
         searchAdapter = StopSearchAdapter { result ->
-            onStopPicked(result.rblNumber, result.stopName, result.platform, result.lines, null)
+            onStopPicked(result.rblNumber, result.stopName, result.platform, result.lines, null, null)
         }
         binding.searchResultsList.apply {
             layoutManager = LinearLayoutManager(this@WidgetConfigureActivity)
@@ -99,8 +100,10 @@ class WidgetConfigureActivity : AppCompatActivity() {
 
         // 3. Current selection for widget
         selectedStopsAdapter = SelectedStopsAdapter { index ->
-            selectedStops.removeAt(index)
-            updateSelectedStopsUi()
+            if (index in selectedStops.indices) {
+                selectedStops.removeAt(index)
+                updateSelectedStopsUi()
+            }
         }
         binding.selectedStopsList.apply {
             layoutManager = LinearLayoutManager(this@WidgetConfigureActivity)
@@ -110,9 +113,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
 
     private fun loadSavedStops() {
         lifecycleScope.launch {
-            val db = AppDatabase.getDatabase(this@WidgetConfigureActivity)
-            val repo = DepartureRepository(db)
-            val stops = repo.getAllStopsOnce()
+            val stops = repository.getAllStopsOnce()
             if (stops.isNotEmpty()) {
                 binding.savedStopsTitle.visibility = View.VISIBLE
                 binding.savedStopsList.visibility = View.VISIBLE
@@ -161,10 +162,11 @@ class WidgetConfigureActivity : AppCompatActivity() {
         })
     }
 
-    private fun onStopPicked(rbl: Int, name: String, platform: String?, servedLines: String?, lineFilter: String?) {
+    private fun onStopPicked(rbl: Int, name: String, platform: String?, servedLines: String?, lineFilter: String?, customLabel: String? = null) {
         isUpdatingFromSelection = true
         pendingRbl = rbl
         pendingName = name
+        pendingCustomLabel = customLabel?.trim() ?: ""
         pendingPlatform = platform
         pendingServedLines = servedLines
 
@@ -305,7 +307,9 @@ class WidgetConfigureActivity : AppCompatActivity() {
                         binding.previewDeparturesContainer.addView(row)
                     }
                 }
-            } catch (e: Exception) {
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
                 binding.previewProgress.visibility = View.GONE
                 binding.previewStatus.text = "Live preview unavailable offline"
                 binding.previewStatus.visibility = View.VISIBLE
@@ -321,7 +325,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
                 rblNumber = rbl,
                 stopName = pendingName,
                 lineName = binding.lineFilterInput.text?.toString()?.trim() ?: "",
-                customLabel = "", // Aggregated widget uses stop names or "Multiple Stops"
+                customLabel = pendingCustomLabel,
                 platformLines = pendingServedLines ?: ""
             )
 
@@ -333,6 +337,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
             binding.selectedCard.visibility = View.GONE
             binding.searchInput.setText("")
             pendingRbl = null
+            pendingCustomLabel = ""
         }
     }
 
